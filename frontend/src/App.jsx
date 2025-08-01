@@ -3,17 +3,44 @@ import { io } from 'socket.io-client';
 import './App.css';
 import LoginForm from './components/LoginForm';
 import ChatInterface from './components/ChatInterface';
+import authService from './services/authService';
 
 const BACKEND_URL = 'http://localhost:3001';
 
 function App() {
   const [socket, setSocket] = useState(null);
   const [user, setUser] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = io(BACKEND_URL);
+    // Check if user is already authenticated
+    const checkAuth = async () => {
+      try {
+        const isAuthenticated = await authService.verifyToken();
+        if (isAuthenticated) {
+          const userData = authService.getUser();
+          setUser(userData);
+          initializeSocket(userData);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        authService.logout();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const initializeSocket = (userData) => {
+    const token = authService.getToken();
+    const newSocket = io(BACKEND_URL, {
+      auth: {
+        token: token
+      }
+    });
     
     newSocket.on('connect', () => {
       console.log('Connected to server');
@@ -29,26 +56,54 @@ function App() {
       setUser(userData);
     });
 
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      if (error.message === 'Authentication token required' || 
+          error.message === 'Invalid or expired token') {
+        authService.logout();
+        setUser(null);
+      }
+    });
+
     setSocket(newSocket);
 
     return () => {
       newSocket.close();
     };
-  }, []);
+  };
 
-  const handleLogin = (userData) => {
-    if (socket) {
-      socket.emit('user_login', userData);
+  const handleLogin = async (userData) => {
+    try {
+      setIsLoading(true);
+      const response = await authService.login(userData);
+      setUser(response.user);
+      initializeSocket(response.user);
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
+    authService.logout();
     setUser(null);
     if (socket) {
       socket.disconnect();
-      socket.connect();
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,7 +113,7 @@ function App() {
             Real-Time Chat Application
           </h1>
           <p className="text-muted-foreground">
-            Real-time chat application
+            Real-time chat application with secure authentication
           </p>
           {isConnected ? (
             <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
@@ -74,7 +129,7 @@ function App() {
         </header>
 
         {!user ? (
-          <LoginForm onLogin={handleLogin} />
+          <LoginForm onLogin={handleLogin} isLoading={isLoading} />
         ) : (
           <ChatInterface 
             socket={socket} 
