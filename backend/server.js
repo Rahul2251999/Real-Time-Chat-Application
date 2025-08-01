@@ -2,8 +2,6 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const app = express();
@@ -15,9 +13,6 @@ const io = socketIo(server, {
   }
 });
 
-// JWT Secret (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -25,93 +20,13 @@ app.use(express.json());
 // In-memory storage
 const chatRooms = new Map(); // roomId -> { name, messages: [], users: Set() }
 const users = new Map(); // socketId -> { id, name, email, photo, currentRoom }
-const userTokens = new Map(); // token -> { userId, name, email, photo }
-
-// JWT Token generation
-const generateToken = (userData) => {
-  return jwt.sign(
-    { 
-      userId: userData.id, 
-      name: userData.name, 
-      email: userData.email,
-      photo: userData.photo 
-    }, 
-    JWT_SECRET, 
-    { expiresIn: '24h' }
-  );
-};
-
-// JWT Token verification middleware
-const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
-  }
-};
 
 // API Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Authentication endpoint
-app.post('/api/auth/login', (req, res) => {
-  const { name, email, photo } = req.body;
-  
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Name and email are required' });
-  }
-
-  // Generate user ID
-  const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  // Create user data
-  const userData = {
-    id: userId,
-    name,
-    email,
-    photo: photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
-  };
-
-  // Generate JWT token
-  const token = generateToken(userData);
-  
-  // Store token mapping
-  userTokens.set(token, userData);
-
-  res.json({
-    success: true,
-    token,
-    user: userData
-  });
-});
-
-// Verify token endpoint
-app.get('/api/auth/verify', verifyToken, (req, res) => {
-  res.json({
-    success: true,
-    user: req.user
-  });
-});
-
-// Get user profile endpoint
-app.get('/api/auth/profile', verifyToken, (req, res) => {
-  res.json({
-    success: true,
-    user: req.user
-  });
-});
-
-app.get('/api/rooms', verifyToken, (req, res) => {
+app.get('/api/rooms', (req, res) => {
   const rooms = Array.from(chatRooms.entries()).map(([id, room]) => ({
     id,
     name: room.name,
@@ -124,44 +39,29 @@ app.get('/api/rooms', verifyToken, (req, res) => {
   res.json(rooms);
 });
 
-// Socket.IO connection handling with token authentication
-io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  
-  if (!token) {
-    return next(new Error('Authentication token required'));
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    socket.userData = decoded;
-    next();
-  } catch (error) {
-    return next(new Error('Invalid or expired token'));
-  }
-});
-
+// Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Store user data from token
-  const userData = socket.userData;
-  users.set(socket.id, {
-    id: userData.userId,
-    name: userData.name,
-    email: userData.email,
-    photo: userData.photo,
-    currentRoom: null
+  // Handle user authentication/login
+  socket.on('user_login', (userData) => {
+    users.set(socket.id, {
+      id: userData.id || socket.id,
+      name: userData.name,
+      email: userData.email,
+      photo: userData.photo,
+      currentRoom: null
+    });
+    
+    socket.emit('login_success', {
+      id: socket.id,
+      name: userData.name,
+      email: userData.email,
+      photo: userData.photo
+    });
+    
+    console.log('User logged in:', userData.name);
   });
-  
-  socket.emit('login_success', {
-    id: userData.userId,
-    name: userData.name,
-    email: userData.email,
-    photo: userData.photo
-  });
-  
-  console.log('User logged in:', userData.name);
 
   // Handle creating a new chat room
   socket.on('create_room', (roomData) => {

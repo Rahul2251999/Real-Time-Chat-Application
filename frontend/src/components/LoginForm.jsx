@@ -3,27 +3,23 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Label } from './ui/label';
-import { User, Mail, Image, Loader2 } from 'lucide-react';
+import { User, Mail, Image } from 'lucide-react';
 
-const LoginForm = ({ onLogin, isLoading = false }) => {
+const LoginForm = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     photo: ''
   });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.name && formData.email) {
-      try {
-        await onLogin({
-          name: formData.name,
-          email: formData.email,
-          photo: formData.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
-        });
-      } catch (error) {
-        console.error('Login error:', error);
-      }
+      onLogin({
+        name: formData.name,
+        email: formData.email,
+        photo: formData.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
+      });
     }
   };
 
@@ -53,12 +49,8 @@ const LoginForm = ({ onLogin, isLoading = false }) => {
     }
   ];
 
-  const handleQuickLogin = async (userData) => {
-    try {
-      await onLogin(userData);
-    } catch (error) {
-      console.error('Quick login error:', error);
-    }
+  const handleQuickLogin = (userData) => {
+    onLogin(userData);
   };
 
   return (
@@ -70,7 +62,7 @@ const LoginForm = ({ onLogin, isLoading = false }) => {
             Login to Chat
           </CardTitle>
           <CardDescription>
-            Enter your details to join the chat rooms with secure authentication
+            Enter your details to join the chat rooms
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -84,7 +76,6 @@ const LoginForm = ({ onLogin, isLoading = false }) => {
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
                 required
-                disabled={isLoading}
               />
             </div>
             
@@ -97,7 +88,6 @@ const LoginForm = ({ onLogin, isLoading = false }) => {
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 required
-                disabled={isLoading}
               />
             </div>
             
@@ -109,22 +99,12 @@ const LoginForm = ({ onLogin, isLoading = false }) => {
                 placeholder="Enter photo URL"
                 value={formData.photo}
                 onChange={(e) => handleChange('photo', e.target.value)}
-                disabled={isLoading}
               />
             </div>
             
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                <>
-                  <Mail className="w-4 h-4 mr-2" />
-                  Join Chat
-                </>
-              )}
+            <Button type="submit" className="w-full">
+              <Mail className="w-4 h-4 mr-2" />
+              Join Chat
             </Button>
           </form>
 
@@ -146,7 +126,6 @@ const LoginForm = ({ onLogin, isLoading = false }) => {
                 variant="outline"
                 className="w-full justify-start"
                 onClick={() => handleQuickLogin(option)}
-                disabled={isLoading}
               >
                 <img
                   src={option.photo}

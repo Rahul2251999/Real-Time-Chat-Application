@@ -1,4 +1,4 @@
-# Real-Time Chat Application
+# EspressoLabs Real-Time Chat Application
 
 A real-time chat application built with ReactJS and Node.js that allows users to join different chat rooms and interact in real time using Socket.IO.
 
@@ -177,6 +177,4 @@ espresso-chat-app/
 
 ---
 
-Built for demonstrating real-time web application development skills with modern JavaScript technologies.
-
-# Real-Time-Chat-Application
+Built for the EspressoLabs coding challenge - demonstrating real-time web application development skills with modern JavaScript technologies.
