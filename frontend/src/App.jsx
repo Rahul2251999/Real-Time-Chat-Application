@@ -4,7 +4,7 @@ import './App.css';
 import LoginForm from './components/LoginForm';
 import ChatInterface from './components/ChatInterface';
 
-const BACKEND_URL = 'http://localhost:3001';
+const BACKEND_URL = 'http://10.0.0.229:3001';
 
 function App() {
   const [socket, setSocket] = useState(null);
@@ -12,6 +12,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    console.log('Connecting to backend at:', BACKEND_URL);
     // Initialize socket connection
     const newSocket = io(BACKEND_URL);
     
@@ -25,7 +26,12 @@ function App() {
       setIsConnected(false);
     });
 
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
     newSocket.on('login_success', (userData) => {
+      console.log('Login success:', userData);
       setUser(userData);
     });
 
@@ -37,8 +43,11 @@ function App() {
   }, []);
 
   const handleLogin = (userData) => {
+    console.log('Attempting login with:', userData);
     if (socket) {
       socket.emit('user_login', userData);
+    } else {
+      console.error('Socket not connected');
     }
   };
 
