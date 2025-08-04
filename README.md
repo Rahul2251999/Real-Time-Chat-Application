@@ -46,7 +46,7 @@ A real-time chat application built with ReactJS and Node.js that allows users to
 - **Backend**: Node.js with Express & Socket.IO
 - **Real-time Communication**: Socket.IO
 - **Encryption**: RSA-2048 for message security
-- **Storage**: In-memory (for the 90-minute challenge)
+- **Storage**: In-memory 
 
 ## Setup Instructions
 
