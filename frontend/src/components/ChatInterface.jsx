@@ -27,6 +27,7 @@ const ChatInterface = ({ socket, user, onLogout }) => {
 
     socket.on('room_joined', (roomData) => {
       setCurrentRoom(roomData);
+      console.log('Joined room with encryption:', !!roomData.publicKey);
     });
 
     socket.on('error', (error) => {
@@ -66,16 +67,20 @@ const ChatInterface = ({ socket, user, onLogout }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto p-4">
       {/* Sidebar */}
-      <div className="lg:col-span-1">
-        <Card>
+      <div className="lg:col-span-1 space-y-4">
+        <Card className="shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Chat Rooms</CardTitle>
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">Chat Rooms</CardTitle>
+              </div>
               <Button
                 size="sm"
                 onClick={() => setShowCreateRoom(true)}
+                className="shadow-sm"
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -91,16 +96,19 @@ const ChatInterface = ({ socket, user, onLogout }) => {
         </Card>
 
         {/* User Info */}
-        <Card className="mt-4">
+        <Card className="shadow-lg">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 mb-4">
-              <img
-                src={user.photo}
-                alt={user.name}
-                className="w-10 h-10 rounded-full"
-              />
+              <div className="relative">
+                <img
+                  src={user.photo}
+                  alt={user.name}
+                  className="w-12 h-12 rounded-full ring-2 ring-primary/20"
+                />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{user.name}</p>
+                <p className="font-semibold truncate">{user.name}</p>
                 <p className="text-sm text-muted-foreground truncate">
                   {user.email}
                 </p>
@@ -110,7 +118,7 @@ const ChatInterface = ({ socket, user, onLogout }) => {
               variant="outline"
               size="sm"
               onClick={onLogout}
-              className="w-full"
+              className="w-full transition-all duration-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -129,21 +137,23 @@ const ChatInterface = ({ socket, user, onLogout }) => {
             onLeaveRoom={handleLeaveRoom}
           />
         ) : (
-          <Card className="h-96 flex items-center justify-center">
+          <Card className="h-96 flex items-center justify-center shadow-lg">
             <CardContent className="text-center">
-              <MessageCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">Welcome to Real-Time Chat Application!</h3>
-              <p className="text-muted-foreground mb-4">
-                Select a chat room from the sidebar to start chatting, or create a new one.
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                <MessageCircle className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Welcome to Real-Time Chat!</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Select a chat room from the sidebar to start chatting, or create a new one to begin your conversation.
               </p>
-              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
+              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg">
                   <Users className="w-4 h-4" />
-                  {rooms.reduce((total, room) => total + room.userCount, 0)} users online
+                  <span className="font-medium">{rooms.reduce((total, room) => total + room.userCount, 0)} users online</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg">
                   <MessageCircle className="w-4 h-4" />
-                  {rooms.length} active rooms
+                  <span className="font-medium">{rooms.length} active rooms</span>
                 </div>
               </div>
             </CardContent>

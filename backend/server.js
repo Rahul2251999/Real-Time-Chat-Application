@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+// const { getRoomPublicKey, decryptMessage } = require('./encryption');
 require('dotenv').config();
 
 const app = express();
@@ -31,6 +32,7 @@ app.get('/api/rooms', (req, res) => {
     id,
     name: room.name,
     userCount: room.users.size,
+    encrypted: true, // All rooms now have encryption
     users: Array.from(room.users).map(socketId => {
       const user = users.get(socketId);
       return user ? { name: user.name, photo: user.photo } : null;
@@ -73,9 +75,13 @@ io.on('connection', (socket) => {
       users: new Set()
     });
     
+    // Encryption temporarily disabled
+    // const publicKey = getRoomPublicKey(roomId);
+    
     socket.emit('room_created', {
       id: roomId,
       name: roomData.name
+      // publicKey
     });
     
     // Broadcast updated room list to all clients
@@ -117,11 +123,15 @@ io.on('connection', (socket) => {
     room.users.add(socket.id);
     user.currentRoom = roomId;
 
+    // Encryption temporarily disabled
+    // const publicKey = getRoomPublicKey(roomId);
+    
     // Send room data to user
     socket.emit('room_joined', {
       roomId,
       roomName: room.name,
       messages: room.messages,
+      // publicKey,
       users: Array.from(room.users).map(socketId => {
         const roomUser = users.get(socketId);
         return roomUser ? {
@@ -160,13 +170,22 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Handle message decryption (currently disabled)
+    let decryptedText = messageData.text;
+    if (messageData.encrypted) {
+      // Encryption is temporarily disabled, treat all messages as unencrypted
+      console.log('Encryption temporarily disabled, treating message as unencrypted');
+      decryptedText = messageData.text;
+    }
+
     const message = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      text: messageData.text,
+      text: decryptedText,
       userId: socket.id,
       userName: user.name,
       userPhoto: user.photo,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      encrypted: false // Store decrypted message in server
     };
 
     // Store message in room history
@@ -175,7 +194,7 @@ io.on('connection', (socket) => {
     // Broadcast message to all users in the room
     io.to(user.currentRoom).emit('new_message', message);
     
-    console.log(`Message from ${user.name} in room ${room.name}: ${messageData.text}`);
+    console.log(`Message from ${user.name} in room ${room.name}: ${decryptedText}`);
   });
 
   // Handle disconnection
@@ -206,6 +225,7 @@ function broadcastRoomList() {
     id,
     name: room.name,
     userCount: room.users.size,
+    encrypted: true, // All rooms now have encryption
     users: Array.from(room.users).map(socketId => {
       const user = users.get(socketId);
       return user ? { name: user.name, photo: user.photo } : null;

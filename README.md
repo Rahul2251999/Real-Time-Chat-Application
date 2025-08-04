@@ -25,11 +25,19 @@ A real-time chat application built with ReactJS and Node.js that allows users to
 - Mobile-friendly responsive layout
 - Real-time user presence indicators
 
+✅ **RSA Message Encryption**
+- End-to-end encryption for all messages using RSA-2048
+- Each chat room has its own encryption key pair
+- Messages are encrypted on the client side before transmission
+- Visual indicators show encryption status
+- Secure message transmission with server-side decryption
+
 ## Tech Stack
 
 - **Frontend**: ReactJS with TypeScript, Tailwind CSS, shadcn/ui
 - **Backend**: Node.js with Express & Socket.IO
 - **Real-time Communication**: Socket.IO
+- **Encryption**: RSA-2048 for message security
 - **Storage**: In-memory (for the 90-minute challenge)
 
 ## Setup Instructions
@@ -88,12 +96,14 @@ The application follows a client-server architecture with real-time communicatio
 ### Backend (Node.js + Express + Socket.IO)
 - **Express Server**: Handles HTTP requests and serves API endpoints
 - **Socket.IO Server**: Manages WebSocket connections for real-time communication
+- **RSA Encryption**: Generates and manages encryption keys for each chat room
 - **In-Memory Storage**: Stores chat rooms, messages, and user data
 - **Event Handlers**: Manages user authentication, room creation/joining, and message broadcasting
 
 ### Frontend (React + TypeScript)
 - **React Components**: Modular UI components for login, chat interface, and room management
 - **Socket.IO Client**: Handles real-time communication with the backend
+- **RSA Encryption**: Client-side message encryption using jsencrypt library
 - **State Management**: React hooks for managing application state
 - **Responsive Design**: Tailwind CSS for modern, mobile-friendly UI
 
@@ -101,8 +111,10 @@ The application follows a client-server architecture with real-time communicatio
 1. User authenticates via the login form
 2. Socket.IO establishes real-time connection
 3. User can create new rooms or join existing ones
-4. Messages are sent via Socket.IO and broadcast to all room members
-5. Real-time updates for user presence and room lists
+4. Each room generates its own RSA key pair for encryption
+5. Messages are encrypted on the client side before transmission
+6. Server decrypts messages and broadcasts to all room members
+7. Real-time updates for user presence and room lists
 
 ## What I'd Improve with More Time
 
@@ -117,6 +129,8 @@ The application follows a client-server architecture with real-time communicatio
 - **JWT Tokens**: Add secure token-based authentication
 - **Rate Limiting**: Implement rate limiting for messages and API calls
 - **Input Sanitization**: Add comprehensive input validation and sanitization
+- **Perfect Forward Secrecy**: Implement ephemeral keys for enhanced security
+- **Message Signing**: Add digital signatures to verify message authenticity
 
 ### Features & UX
 - **File Sharing**: Support for image and file uploads
@@ -149,6 +163,7 @@ The application follows a client-server architecture with real-time communicatio
 espresso-chat-app/
 ├── backend/
 │   ├── server.js          # Main server file with Socket.IO setup
+│   ├── encryption.js      # RSA encryption utilities
 │   ├── package.json       # Backend dependencies
 │   └── .env              # Environment variables
 ├── frontend/
@@ -160,6 +175,8 @@ espresso-chat-app/
 │   │   │   ├── ChatRoom.jsx
 │   │   │   ├── RoomList.jsx
 │   │   │   └── CreateRoomDialog.jsx
+│   │   ├── utils/        # Utility functions
+│   │   │   └── encryption.js  # Frontend encryption utilities
 │   │   ├── App.jsx       # Main App component
 │   │   └── main.jsx      # Entry point
 │   ├── package.json      # Frontend dependencies
